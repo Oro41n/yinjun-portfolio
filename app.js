@@ -18,6 +18,29 @@ if(!C || !A){
   return;
 }
 
+/* ---------- 响应式图源：480w 缩略 / 800w 中图（WebP），大图仅阅读器使用 ---------- */
+const T = window.TIERS || {};
+const baseOf = s => s ? s.replace(/^.*\//, '').replace(/\.jpg$/i, '') : '';
+function tierSrc(s, w){
+  const b = baseOf(s), t = T[b];
+  if(!t || !t[w ? 1 : 0]) return '';
+  return (w ? 'assets_m/' : 'assets_t/') + b + '.webp';
+}
+/* 返回 src(+srcset+sizes+宽高+decoding)，统一按上下文给 sizes，浏览器自己挑 480 还是 800 */
+function imgAttr(s, sizes, extra){
+  const b = baseOf(s), t = T[b];
+  const mid = t && t[1] ? 'assets_m/' + b + '.webp' : s;
+  let out = 'src="' + mid + '"';
+  if(t && t[0] && t[1])
+    out += ' srcset="assets_t/' + b + '.webp ' + t[0] + 'w, assets_m/' + b + '.webp ' + t[1] + 'w" sizes="' + sizes + '"';
+  if(t && t[2] && t[3]){
+    const k = t[1] / t[2];
+    out += ' width="' + Math.round(t[2] * k) + '" height="' + Math.round(t[3] * k) + '"';
+  }
+  out += ' decoding="async"';
+  if(extra) out += ' ' + extra;
+  return out;
+}
 const pngSrc = k => (A.png[k] || {}).src;
 const pdfPages = k => (A.pdf[k] || {}).pages || [];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -76,7 +99,7 @@ function buildCinema(ch){
     <div class="cinema">
       <div class="stage rv" id="stage">
         ${items.map((it,i)=>`<div class="slide${i===0?' on':''}" data-i="${i}">
-          <img src="${pngSrc(it.key)}" alt="${esc(it.title)}" ${i>2?'loading="lazy"':''}>
+          <img ${imgAttr(pngSrc(it.key),'(max-width:700px) 92vw, 86vw', i>2?'loading="lazy"':'fetchpriority="high"')} alt="${esc(it.title)}">
         </div>`).join('')}
         <div class="stage-cap"><h3 id="stageTitle">${esc(items[0].title)}</h3>
           <p id="stageSub">${esc(items[0].sub)}</p></div>
@@ -87,7 +110,7 @@ function buildCinema(ch){
         <div class="stage-dots">${items.map((_,i)=>`<i class="${i===0?'on':''}" data-i="${i}"></i>`).join('')}</div>
         <button id="stageNext" aria-label="下一张">›</button>
       </div>
-      <div class="stage-thumbs">${items.map((it,i)=>`<button class="${i===0?'on':''}" data-i="${i}"><img src="${pngSrc(it.key)}" loading="lazy" alt=""></button>`).join('')}</div>
+      <div class="stage-thumbs">${items.map((it,i)=>`<button class="${i===0?'on':''}" data-i="${i}"><img ${imgAttr(pngSrc(it.key),'84px','loading="lazy"')} alt=""></button>`).join('')}</div>
     </div>
   </section>`;
 }
@@ -98,7 +121,7 @@ function buildCoverflow(ch){
     <div class="coverflow">
       <div class="cf-track" id="cfTrack">
         ${ch.items.map((it,i)=>`<div class="cf-item" data-i="${i}">
-          <img src="${pngSrc(it.key)}" alt="${esc(it.title)}" loading="lazy">
+          <img ${imgAttr(pngSrc(it.key),'(max-width:700px) 150px, 300px','loading="lazy"')} alt="${esc(it.title)}">
           <div class="cf-tag">${esc(it.title)} · ${esc(it.tag)}</div>
         </div>`).join('')}
       </div>
@@ -119,7 +142,7 @@ function buildCollateral(ch){
         <div class="coll-ghead"><h3>${esc(g.name)}</h3><span class="en">${esc(g.en)}</span>
           <span class="num">${String(g.items.length).padStart(2,'0')} PCS</span></div>
         <div class="masonry">${g.items.map(it=>`<figure class="m-item" data-key="${esc(it.key)}" data-title="${esc(it.title)}">
-          <img src="${pngSrc(it.key)}" alt="${esc(it.title)}" loading="lazy">
+          <img ${imgAttr(pngSrc(it.key),'(max-width:700px) 46vw, (max-width:1100px) 30vw, 22vw','loading="lazy"')} alt="${esc(it.title)}">
           <figcaption class="m-cap">${esc(it.title)}</figcaption>
         </figure>`).join('')}</div>
       </div>`).join('')}
@@ -134,7 +157,7 @@ function buildBook(ch){
     <div class="book-wrap">
       <div class="book rv" id="book">
         ${items.map((it,i)=>`<div class="b-page${i===0?' on':''}" data-i="${i}">
-          <img src="${pngSrc(it.key)}" alt="${esc(it.title)}" ${i>1?'loading="lazy"':''}>
+          <img ${imgAttr(pngSrc(it.key),'(max-width:900px) 88vw, 58vw', i>1?'loading="lazy"':'fetchpriority="high"')} alt="${esc(it.title)}">
         </div>`).join('')}
         <div class="b-shade"></div>
       </div>
@@ -145,7 +168,7 @@ function buildBook(ch){
         <div class="book-ctrl">
           <button id="bookPrev">‹</button><button id="bookNext">›</button>
         </div>
-        <div class="book-strip">${items.map((it,i)=>`<button class="${i===0?'on':''}" data-i="${i}"><img src="${pngSrc(it.key)}" loading="lazy" alt=""></button>`).join('')}</div>
+        <div class="book-strip">${items.map((it,i)=>`<button class="${i===0?'on':''}" data-i="${i}"><img ${imgAttr(pngSrc(it.key),'56px','loading="lazy"')} alt=""></button>`).join('')}</div>
       </div>
     </div>
   </section>`;
@@ -162,7 +185,7 @@ function buildArchive(ch){
     <div class="archive-grid" id="archiveGrid">
       ${ch.items.map((r,i)=>`<article class="rep rv" data-i="${i}" data-project="${esc(r.project)}">
         <div class="rep-cover">
-          <img src="${r.pages[0]}" alt="${esc(r.title)}" loading="lazy">
+          <img ${imgAttr(r.pages[0],'(max-width:700px) 88vw, (max-width:1100px) 30vw, 22vw','loading="lazy"')} alt="${esc(r.title)}">
           <div class="rep-open"><span>逐 页 翻 阅</span></div>
         </div>
         <div class="rep-meta"><h4>${esc(r.title)}</h4><span class="pg">${r.pages.length} P</span></div>
@@ -396,7 +419,8 @@ function buildFilm(){
   vList.forEach((src,i)=>{
     const b=document.createElement('button');
     b.type='button'; b.title='第 '+(i+1)+' 页'; b.dataset.i=i;
-    const im=document.createElement('img'); im.loading='lazy'; im.src=src; im.alt='';
+    const im=document.createElement('img'); im.loading='lazy'; im.decoding='async';
+    im.src=tierSrc(src,0)||src; im.alt='';
     const s=document.createElement('span'); s.textContent=String(i+1).padStart(2,'0');
     b.appendChild(im); b.appendChild(s);
     b.onclick=()=>{ vIdx=i; showV(); };
@@ -405,13 +429,21 @@ function buildFilm(){
   vFilmTrack.appendChild(frag);
   vFilm.classList.add('show');
 }
+/* 阅读器图源：手机上 800w WebP 足够且省 4~5 倍流量；桌面用原始 1536 图保质量 */
+function viewerSrc(s){
+  const many = vList.length > 1;
+  if(many && window.innerWidth <= 900){ const m = tierSrc(s,1); if(m) return m; }
+  return s;
+}
 function showV(){
   const src=vList[vIdx]; if(!src) return;
   vImg.classList.remove('show');
+  const use = viewerSrc(src);
   const im=new Image();
-  im.onload=()=>{ vImg.src=src; vImg.classList.add('show'); applyZoom(); };
-  im.src=src;
-  if(vImg.complete && vImg.src===src) { vImg.classList.add('show'); }
+  vImg.decoding='async';
+  im.onload=()=>{ vImg.src=use; vImg.classList.add('show'); applyZoom(); };
+  im.src=use;
+  if(vImg.complete && vImg.src===use) { vImg.classList.add('show'); }
   $('#vCur').textContent=vIdx+1;
   $('#vBarFill').style.width=((vIdx+1)/vList.length*100)+'%';
   $('#vPrev').disabled=vIdx<=0; $('#vNext').disabled=vIdx>=vList.length-1;
@@ -424,7 +456,7 @@ function showV(){
         vFilmTrack.scrollLeft+=ar.left-tr.left-(tr.width-ar.width)/2; }
   }
   // preload neighbours
-  [vIdx-1,vIdx+1,vIdx+2].forEach(i=>{if(i>=0&&i<vList.length){const p=new Image();p.src=vList[i]}});
+  [vIdx-1,vIdx+1,vIdx+2].forEach(i=>{if(i>=0&&i<vList.length){const p=new Image();p.src=viewerSrc(vList[i])}});
 }
 function applyZoom(){
   if(vZoomFit){ vImg.style.maxWidth='100%';vImg.style.maxHeight='100%';vImg.style.width='auto';vImg.style.height='auto'; }
