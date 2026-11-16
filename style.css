@@ -3,8 +3,9 @@
    Ink & Vermilion / Editorial Art Direction
    ============================================================ */
 
-@font-face{font-family:'PXSans';src:url('fonts/sans.woff2') format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'PXSerif';src:url('fonts/serif.woff2') format('woff2');font-weight:400 900;font-display:swap}
+/* 字体双源：先试 jsDelivr（国内实测快 3.3x），失败浏览器自动回退本地 */
+@font-face{font-family:'PXSans';src:url('https://fastly.jsdelivr.net/gh/Oro41n/yinjun-portfolio@2e10e11/fonts/sans.woff2') format('woff2'),url('fonts/sans.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'PXSerif';src:url('https://fastly.jsdelivr.net/gh/Oro41n/yinjun-portfolio@2e10e11/fonts/serif.woff2') format('woff2'),url('fonts/serif.woff2') format('woff2');font-weight:400 900;font-display:swap}
 
 :root{
   --ink:#14120f;

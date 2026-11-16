@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14120f">
+<title>殷俊 · 作品集 | YIN JUN PORTFOLIO</title>
+<meta name="description" content="殷俊 平面设计师作品集 — 主视觉、节气刷屏、物料延展、宣传册与服务报告。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="vignette"></div>
+<div id="progress"></div>
+
+<header id="topbar">
+  <div class="brand">殷<em>·</em>俊 <span style="font-size:10px;letter-spacing:.3em;opacity:.5;margin-left:10px">PORTFOLIO</span></div>
+  <div class="meta" id="topMeta">GRAPHIC DESIGN / 2021 — 2026</div>
+</header>
+
+<nav id="rail" aria-label="章节导航"></nav>
+<div id="counter"><b>00</b> / 06</div>
+
+<main id="app"></main>
+
+<!-- Viewer -->
+<div class="viewer" id="viewer" role="dialog" aria-modal="true">
+  <div class="v-top">
+    <button class="v-close" id="vClose" title="关闭 (Esc)">×</button>
+    <div>
+      <div class="v-title" id="vTitle">—</div>
+      <div class="v-sub" id="vSub">—</div>
+    </div>
+    <div class="v-spacer"></div>
+    <button id="vZoom" title="缩放适应">⤢</button>
+  </div>
+  <div class="v-stage" id="vStage">
+    <button class="v-side left" id="vPrev">‹</button>
+    <img id="vImg" alt="">
+    <button class="v-side right" id="vNext">›</button>
+  </div>
+  <div class="v-film" id="vFilm"><div class="v-film-track" id="vFilmTrack"></div></div>
+  <div class="v-bottom">
+    <div class="v-page"><b id="vCur">1</b> / <span id="vTotal">1</span></div>
+    <div class="v-bar" id="vBar"><i id="vBarFill"></i></div>
+    <div class="v-tip">← → 翻页 · 滚轮 · ESC 退出</div>
+  </div>
+</div>
+
+<script src="assets.js"></script>
+<script src="tiers.js"></script>
+<script src="catalog.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

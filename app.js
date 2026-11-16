@@ -18,6 +18,21 @@ if(!C || !A){
   return;
 }
 
+/* ---------- CDN：重资源走 jsDelivr（国内实测快 3.3x），失败自动整体回退本地 ---------- */
+const CDN_BASE = 'https://fastly.jsdelivr.net/gh/Oro41n/yinjun-portfolio@2e10e11/';
+/* 若 CDN 上次失败过（或被手动关掉），本次整页直接走本地，不再重试 */
+let cdnOn = true;
+try{ if(sessionStorage.getItem('pxNoCdn') === '1') cdnOn = false; }catch(e){}
+const cdn = p => cdnOn ? CDN_BASE + p : p;
+/* CDN 连续失败两次 → 打标记后重载页面，重载时整体走本地相对路径。
+   直接改 srcset 在 <picture> 里重选不可靠，重载是唯一确定性方案。 */
+let cdnFail = 0;
+function cdnFallback(){
+  if(!cdnOn) return;
+  try{ sessionStorage.setItem('pxNoCdn', '1'); }catch(e){ return; }
+  location.reload();
+}
+
 /* ---------- 响应式图源：480w 缩略 / 800w 中图（WebP），大图仅阅读器使用 ---------- */
 const T = window.TIERS || {};
 const baseOf = s => s ? s.replace(/^.*\//, '').replace(/\.jpg$/i, '') : '';
@@ -34,10 +49,10 @@ function imgTag(s, sizes, alt, extra){
   if(t && t[2] && t[3]){ const k = t[1] / t[2];
     dim = ' width="' + Math.round(t[2] * k) + '" height="' + Math.round(t[3] * k) + '"'; }
   let avif = '';
-  if(has) avif = '<source type="image/avif" srcset="assets_ta/' + b + '.avif ' + t[0] + 'w, assets_ma/' + b + '.avif ' + t[1] + 'w" sizes="' + sizes + '">';
+  if(has) avif = '<source type="image/avif" data-k="' + b + '" srcset="' + cdn('assets_ta/' + b + '.avif') + ' ' + t[0] + 'w, ' + cdn('assets_ma/' + b + '.avif') + ' ' + t[1] + 'w" sizes="' + sizes + '">';
   const webp = has
-    ? ' src="assets_m/' + b + '.webp" srcset="assets_t/' + b + '.webp ' + t[0] + 'w, assets_m/' + b + '.webp ' + t[1] + 'w" sizes="' + sizes + '"'
-    : ' src="' + s + '"';
+    ? ' data-k="' + b + '" data-big="1" src="' + cdn('assets_m/' + b + '.webp') + '" srcset="' + cdn('assets_t/' + b + '.webp') + ' ' + t[0] + 'w, ' + cdn('assets_m/' + b + '.webp') + ' ' + t[1] + 'w" sizes="' + sizes + '"'
+    : ' data-raw="' + s + '" src="' + cdn(s) + '"';
   return '<picture>' + avif + '<img' + webp + dim + ' decoding="async" loading="lazy"' + (extra ? ' ' + extra : '') + ' alt="' + (alt || '') + '"></picture>';
 }
 const pngSrc = k => (A.png[k] || {}).src;
@@ -419,7 +434,7 @@ function buildFilm(){
     const b=document.createElement('button');
     b.type='button'; b.title='第 '+(i+1)+' 页'; b.dataset.i=i;
     const im=document.createElement('img'); im.loading='lazy'; im.decoding='async';
-    im.src=tierSrc(src,0)||src; im.alt='';
+    im.src=cdn(tierSrc(src,0)||src); im.alt='';
     const s=document.createElement('span'); s.textContent=String(i+1).padStart(2,'0');
     b.appendChild(im); b.appendChild(s);
     b.onclick=()=>{ vIdx=i; showV(); };
@@ -431,8 +446,8 @@ function buildFilm(){
 /* 阅读器图源：手机上 800w WebP 足够且省 4~5 倍流量；桌面用原始 1536 图保质量 */
 function viewerSrc(s){
   const many = vList.length > 1;
-  if(many && window.innerWidth <= 900){ const m = tierSrc(s,1); if(m) return m; }
-  return s;
+  if(many && window.innerWidth <= 900){ const m = tierSrc(s,1); if(m) return cdn(m); }
+  return cdn(s);
 }
 function showV(){
   const src=vList[vIdx]; if(!src) return;
@@ -637,6 +652,13 @@ window.openViewer=openViewer;
     if(img.dataset.guarded) return;
     img.dataset.guarded = '1';
     img.addEventListener('error',()=>{
+      /* CDN 源失败 → 计入回退；本地源失败 → 计入提示条 */
+      const src = img.currentSrc || img.src || '';
+      if(CDN_BASE && src.indexOf(CDN_BASE) === 0){
+        cdnFail++;
+        if(cdnFail >= 2) cdnFallback();
+        return;
+      }
       fails++;
       if(fails >= 3 && !warned){ warned = true; bar.hidden = false; }
     });
