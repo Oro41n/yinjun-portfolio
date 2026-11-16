@@ -26,20 +26,19 @@ function tierSrc(s, w){
   if(!t || !t[w ? 1 : 0]) return '';
   return (w ? 'assets_m/' : 'assets_t/') + b + '.webp';
 }
-/* 返回 src(+srcset+sizes+宽高+decoding)，统一按上下文给 sizes，浏览器自己挑 480 还是 800 */
-function imgAttr(s, sizes, extra){
+/* 输出 <picture>：AVIF 两档优先，WebP 两档兜底；浏览器按 sizes 自选宽度 */
+function imgTag(s, sizes, alt, extra){
   const b = baseOf(s), t = T[b];
-  const mid = t && t[1] ? 'assets_m/' + b + '.webp' : s;
-  let out = 'src="' + mid + '"';
-  if(t && t[0] && t[1])
-    out += ' srcset="assets_t/' + b + '.webp ' + t[0] + 'w, assets_m/' + b + '.webp ' + t[1] + 'w" sizes="' + sizes + '"';
-  if(t && t[2] && t[3]){
-    const k = t[1] / t[2];
-    out += ' width="' + Math.round(t[2] * k) + '" height="' + Math.round(t[3] * k) + '"';
-  }
-  out += ' decoding="async"';
-  if(extra) out += ' ' + extra;
-  return out;
+  const has = !!(t && t[0] && t[1]);
+  let dim = '';
+  if(t && t[2] && t[3]){ const k = t[1] / t[2];
+    dim = ' width="' + Math.round(t[2] * k) + '" height="' + Math.round(t[3] * k) + '"'; }
+  let avif = '';
+  if(has) avif = '<source type="image/avif" srcset="assets_ta/' + b + '.avif ' + t[0] + 'w, assets_ma/' + b + '.avif ' + t[1] + 'w" sizes="' + sizes + '">';
+  const webp = has
+    ? ' src="assets_m/' + b + '.webp" srcset="assets_t/' + b + '.webp ' + t[0] + 'w, assets_m/' + b + '.webp ' + t[1] + 'w" sizes="' + sizes + '"'
+    : ' src="' + s + '"';
+  return '<picture>' + avif + '<img' + webp + dim + ' decoding="async" loading="lazy"' + (extra ? ' ' + extra : '') + ' alt="' + (alt || '') + '"></picture>';
 }
 const pngSrc = k => (A.png[k] || {}).src;
 const pdfPages = k => (A.pdf[k] || {}).pages || [];
@@ -99,7 +98,7 @@ function buildCinema(ch){
     <div class="cinema">
       <div class="stage rv" id="stage">
         ${items.map((it,i)=>`<div class="slide${i===0?' on':''}" data-i="${i}">
-          <img ${imgAttr(pngSrc(it.key),'(max-width:700px) 92vw, 86vw', i>2?'loading="lazy"':'fetchpriority="high"')} alt="${esc(it.title)}">
+          ${imgTag(pngSrc(it.key),'(max-width:700px) 92vw, 86vw', esc(it.title), i>2?'':'fetchpriority="high"')}
         </div>`).join('')}
         <div class="stage-cap"><h3 id="stageTitle">${esc(items[0].title)}</h3>
           <p id="stageSub">${esc(items[0].sub)}</p></div>
@@ -110,7 +109,7 @@ function buildCinema(ch){
         <div class="stage-dots">${items.map((_,i)=>`<i class="${i===0?'on':''}" data-i="${i}"></i>`).join('')}</div>
         <button id="stageNext" aria-label="下一张">›</button>
       </div>
-      <div class="stage-thumbs">${items.map((it,i)=>`<button class="${i===0?'on':''}" data-i="${i}"><img ${imgAttr(pngSrc(it.key),'84px','loading="lazy"')} alt=""></button>`).join('')}</div>
+      <div class="stage-thumbs">${items.map((it,i)=>`<button class="${i===0?'on':''}" data-i="${i}">${imgTag(pngSrc(it.key),'84px','','')}</button>`).join('')}</div>
     </div>
   </section>`;
 }
@@ -121,7 +120,7 @@ function buildCoverflow(ch){
     <div class="coverflow">
       <div class="cf-track" id="cfTrack">
         ${ch.items.map((it,i)=>`<div class="cf-item" data-i="${i}">
-          <img ${imgAttr(pngSrc(it.key),'(max-width:700px) 150px, 300px','loading="lazy"')} alt="${esc(it.title)}">
+          ${imgTag(pngSrc(it.key),'(max-width:700px) 150px, 300px', esc(it.title), '')}
           <div class="cf-tag">${esc(it.title)} · ${esc(it.tag)}</div>
         </div>`).join('')}
       </div>
@@ -142,7 +141,7 @@ function buildCollateral(ch){
         <div class="coll-ghead"><h3>${esc(g.name)}</h3><span class="en">${esc(g.en)}</span>
           <span class="num">${String(g.items.length).padStart(2,'0')} PCS</span></div>
         <div class="masonry">${g.items.map(it=>`<figure class="m-item" data-key="${esc(it.key)}" data-title="${esc(it.title)}">
-          <img ${imgAttr(pngSrc(it.key),'(max-width:700px) 46vw, (max-width:1100px) 30vw, 22vw','loading="lazy"')} alt="${esc(it.title)}">
+          ${imgTag(pngSrc(it.key),'(max-width:700px) 46vw, (max-width:1100px) 30vw, 22vw', esc(it.title), '')}
           <figcaption class="m-cap">${esc(it.title)}</figcaption>
         </figure>`).join('')}</div>
       </div>`).join('')}
@@ -157,7 +156,7 @@ function buildBook(ch){
     <div class="book-wrap">
       <div class="book rv" id="book">
         ${items.map((it,i)=>`<div class="b-page${i===0?' on':''}" data-i="${i}">
-          <img ${imgAttr(pngSrc(it.key),'(max-width:900px) 88vw, 58vw', i>1?'loading="lazy"':'fetchpriority="high"')} alt="${esc(it.title)}">
+          ${imgTag(pngSrc(it.key),'(max-width:900px) 88vw, 58vw', esc(it.title), i>1?'':'fetchpriority="high"')}
         </div>`).join('')}
         <div class="b-shade"></div>
       </div>
@@ -168,7 +167,7 @@ function buildBook(ch){
         <div class="book-ctrl">
           <button id="bookPrev">‹</button><button id="bookNext">›</button>
         </div>
-        <div class="book-strip">${items.map((it,i)=>`<button class="${i===0?'on':''}" data-i="${i}"><img ${imgAttr(pngSrc(it.key),'56px','loading="lazy"')} alt=""></button>`).join('')}</div>
+        <div class="book-strip">${items.map((it,i)=>`<button class="${i===0?'on':''}" data-i="${i}">${imgTag(pngSrc(it.key),'56px','','')}</button>`).join('')}</div>
       </div>
     </div>
   </section>`;
@@ -185,7 +184,7 @@ function buildArchive(ch){
     <div class="archive-grid" id="archiveGrid">
       ${ch.items.map((r,i)=>`<article class="rep rv" data-i="${i}" data-project="${esc(r.project)}">
         <div class="rep-cover">
-          <img ${imgAttr(r.pages[0],'(max-width:700px) 88vw, (max-width:1100px) 30vw, 22vw','loading="lazy"')} alt="${esc(r.title)}">
+          ${imgTag(r.pages[0],'(max-width:700px) 88vw, (max-width:1100px) 30vw, 22vw', esc(r.title), '')}
           <div class="rep-open"><span>逐 页 翻 阅</span></div>
         </div>
         <div class="rep-meta"><h4>${esc(r.title)}</h4><span class="pg">${r.pages.length} P</span></div>
